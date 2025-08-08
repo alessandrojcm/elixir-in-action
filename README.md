@@ -1,0 +1,1 @@
+This repo is just a loose collection of snippets written while following the Elixir in Action book by Sasa Juric.
