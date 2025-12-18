@@ -26,6 +26,14 @@ defmodule TodoServer do
     send(todo_server, {:add_entry, new_entry})
   end
 
+  def delete_entry(todo_server, entry_id) do
+    send(todo_server, {:delete_entry, entry_id})
+  end
+
+  def update_entry(todo_server, entry_id, updater_fun) do
+    send(todo_server, {:update_entry, entry_id, updater_fun})
+  end
+
   defp process_message(todo_list, {:entries, caller, date}) do
     send(caller, {:todo_entries, TodoList.entries(todo_list, date)})
     todo_list
@@ -33,6 +41,14 @@ defmodule TodoServer do
 
   defp process_message(todo_list, {:add_entry, new_entry}) do
     TodoList.add_entry(todo_list, new_entry)
+  end
+
+  defp process_message(todo_list, {:delete_entry, entry_id}) do
+    TodoList.delete_entry(todo_list, entry_id)
+  end
+
+  defp process_message(todo_list, {:update_entry, entry_id, updater_fun}) do
+    TodoList.update_entry(todo_list, entry_id, updater_fun)
   end
 end
 
@@ -47,7 +63,7 @@ defmodule TodoList do
     )
   end
 
-  def add_entry(todo_list, entry) do
+  def add_entry(%TodoList{} = todo_list, entry) do
     entry = Map.put(entry, :id, todo_list.next_id)
 
     new_entries =
@@ -66,7 +82,7 @@ defmodule TodoList do
     |> Enum.filter(fn entry -> entry.date == date end)
   end
 
-  def update_entry(todo_list, entry_id, updater_fun) do
+  def update_entry(%TodoList{} = todo_list, entry_id, updater_fun) do
     case Map.fetch(todo_list.entries, entry_id) do
       :error ->
         todo_list
@@ -78,7 +94,7 @@ defmodule TodoList do
     end
   end
 
-  def delete_entry(todo_list, entry_id) do
+  def delete_entry(%TodoList{} = todo_list, entry_id) do
     case Map.fetch(todo_list.entries, entry_id) do
       :error ->
         todo_list
