@@ -45,7 +45,7 @@ defmodule Todo.List do
       :error ->
         todo_list
 
-      {:ok} ->
+      {:ok, _} ->
         Map.filter(todo_list.entries, fn entry -> entry.id != entry_id end)
     end
   end

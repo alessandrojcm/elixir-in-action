@@ -1,0 +1,2 @@
+[tools]
+elixir = { version = "latest", install_env = { MIX_HOME = "~/.mix" } }

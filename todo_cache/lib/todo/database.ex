@@ -1,5 +1,4 @@
 defmodule Todo.Database do
-  require Logger
   use GenServer
 
   @db_folder "./persist"
@@ -17,35 +16,33 @@ defmodule Todo.Database do
   end
 
   def init(_) do
-    File.mkdir_p!(@db_folder)
-    {:ok, nil}
+    IO.puts("Starting databse with three workers")
+
+    {:ok,
+     %{
+       0 => Todo.Database.Worker.start(@db_folder),
+       1 => Todo.Database.Worker.start(@db_folder),
+       2 => Todo.Database.Worker.start(@db_folder)
+     }}
   end
 
   def handle_cast({:store, key, data}, state) do
-    spawn(fn ->
-      key
-      |> file_name()
-      |> File.write!(:erlang.term_to_binary(data))
-    end)
+    {:ok, worker} = Map.fetch!(state, chose_worker(key))
+    IO.inspect("#{inspect(self())}: storing #{inspect(key)} in #{inspect(worker)}")
+    GenServer.cast(worker, {:store, key, data})
 
     {:noreply, state}
   end
 
-  def handle_call({:get, key}, caller, state) do
-    spawn(fn ->
-      data =
-        case File.read(file_name(key)) do
-          {:ok, contents} -> :erlang.binary_to_term(contents)
-          _ -> nil
-        end
+  def handle_call({:get, key}, _, state) do
+    {:ok, worker} = Map.fetch!(state, chose_worker(key))
+    IO.inspect("#{inspect(self())}: getting #{inspect(key)} from #{inspect(worker)}")
+    result = GenServer.call(worker, {:get, key})
 
-      GenServer.reply(caller, data)
-    end)
-
-    {:noreply, state}
+    {:reply, result, state}
   end
 
-  defp file_name(key) do
-    Path.join(@db_folder, to_string(key))
+  defp chose_worker(key) do
+    :erlang.phash2(key, 3)
   end
 end
