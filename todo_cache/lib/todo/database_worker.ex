@@ -1,20 +1,27 @@
 defmodule Todo.Database.Worker do
   use GenServer
 
-  def start(db_folder) do
-    GenServer.start(Todo.Database.Worker, db_folder)
+  def start_link({worker_id, db_folder}) do
+    IO.puts("Starting database worker")
+
+    GenServer.start_link(
+      __MODULE__,
+      db_folder,
+      name: via_tuple(worker_id)
+    )
   end
 
-  def store(key, data) do
-    GenServer.cast(Todo.Database.Worker, {:store, key, data})
+  def store(worker_id, key, data) do
+    GenServer.cast(via_tuple(worker_id), {:store, key, data})
   end
 
-  def get(key) do
-    GenServer.call(Todo.Database.Worker, {:get, key})
+  def get(worker_id, key) do
+    GenServer.call(via_tuple(worker_id), {:get, key})
   end
 
   @impl true
   def init(db_folder) do
+    IO.puts("Starting database with #{db_folder}")
     File.mkdir_p!(db_folder)
     {:ok, db_folder}
   end
@@ -54,5 +61,9 @@ defmodule Todo.Database.Worker do
 
   defp file_name(key, db_folder) do
     Path.join(db_folder, to_string(key))
+  end
+
+  defp via_tuple(worker_id) do
+    Todo.ProcessRegistry.via_tuple({__MODULE__, worker_id})
   end
 end

@@ -13,8 +13,8 @@ defmodule Todo.Server do
     {:noreply, {name, todo_list}}
   end
 
-  def start(name) do
-    GenServer.start(Todo.Server, name)
+  def start_link(name) do
+    GenServer.start_link(Todo.Server, name)
   end
 
   def add_entry(pid, value) do
