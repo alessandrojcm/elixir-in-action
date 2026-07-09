@@ -49,7 +49,7 @@ defmodule Todo.Database.Worker do
       data =
         case File.read(file_name(key, state)) do
           {:ok, contents} -> :erlang.binary_to_term(contents)
-          _ -> nil
+          {:error, :enoent} -> nil
         end
 
       IO.inspect("Replying to #{inspect(caller)}")
