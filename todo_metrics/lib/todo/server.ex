@@ -1,6 +1,8 @@
 defmodule Todo.Server do
   use GenServer, restart: :temporary
 
+  @expiry_idle_timeout :timer.seconds(10)
+
   @impl true
   def init(name) do
     {:ok, {name, nil}, {:continue, :init}}
@@ -10,7 +12,7 @@ defmodule Todo.Server do
   def handle_continue(:init, {name, nil}) do
     todo_list = Todo.Database.get(name) || Todo.List.new()
 
-    {:noreply, {name, todo_list}}
+    {:noreply, {name, todo_list}, @expiry_idle_timeout}
   end
 
   def start_link(name) do
@@ -35,7 +37,13 @@ defmodule Todo.Server do
 
   @impl GenServer
   def handle_call({:get, date}, _, {name, list}) do
-    {:reply, Todo.List.entries(list, date), {name, list}}
+    {:reply, Todo.List.entries(list, date), {name, list}, @expiry_idle_timeout}
+  end
+
+  @impl GenServer
+  def handle_info(:timeout, {name, todo_list}) do
+    IO.puts("Stopping todo server for #{name}")
+    {:stop, :normal, {name, todo_list}}
   end
 
   @impl GenServer
@@ -51,7 +59,7 @@ defmodule Todo.Server do
       {:post, value} ->
         new_list = Todo.List.add_entry(todo_list, value)
         Todo.Database.store(name, new_list)
-        {:noreply, {name, new_list}}
+        {:noreply, {name, new_list}, @expiry_idle_timeout}
 
       {:put, key, updater_fun} ->
         new_list = Todo.List.update_entry(todo_list, key, updater_fun)

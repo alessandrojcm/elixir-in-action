@@ -1,2 +1,9 @@
 [tools]
 elixir = { version = "latest", install_env = { MIX_HOME = "~/.mix" } }
+
+# Interactive test debugging: stops at any IEx.pry() breakpoint.
+# Usage: mise run test:debug [-- path/to/test.exs:LINE]
+[tasks."test:debug"]
+description = "Run ExUnit under IEx so IEx.pry() breakpoints pause the run"
+dir = "{{cwd}}"
+run = "iex -S mix test --trace"
