@@ -40,7 +40,7 @@ defmodule Todo.Web do
     Plug.Cowboy.child_spec(
       scheme: :http,
       plug: __MODULE__,
-      options: [port: 5454]
+      options: [port: Application.fetch_env!(:todo, :http_port)]
     )
   end
 end
